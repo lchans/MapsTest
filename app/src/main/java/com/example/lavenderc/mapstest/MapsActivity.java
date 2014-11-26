@@ -1,25 +1,39 @@
 package com.example.lavenderc.mapstest;
 
+import android.content.Context;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.GpsStatus;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CircleOptions;
+
+import android.view.View;
 import android.widget.TextView;
 import com.google.android.gms.maps.UiSettings;
 import android.location.LocationProvider;
+import android.widget.Toast;
+import android.location.Geocoder;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 
 public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
-    private TextView popupText;
+    private List<Address> addresses = null;
+    private CharSequence text;
+    private boolean isShapeSet;
+    private Circle circle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,22 +84,59 @@ public class MapsActivity extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+       /*
+            Set up initial stuff here. Used to be a marker.
+        */
+    }
+
+    public void buttonAction (View view) {
+       isShapeSet = !isShapeSet;
+       if (isShapeSet) {
+           CircleOptions circleOptions = new CircleOptions()
+                   .center(new LatLng(37.4, -122.1))
+                   .radius(100000) // In meters
+                   .strokeWidth(1)
+                   .fillColor(Color.CYAN);
+           circle = mMap.addCircle(circleOptions);
+       } else {
+            circle.remove();
+       }
+       System.out.println(isShapeSet);
     }
 
     private void changeMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 10)).title("Other Marker")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
-        );
-
-        mMap.addCircle(new CircleOptions().center(new LatLng(0, 5)).radius(1000000).fillColor(Color.BLUE));
-        mMap.addCircle(new CircleOptions().center(new LatLng(10, 10)).radius(1000000).fillColor(Color.RED));
-        mMap.addCircle(new CircleOptions().center(new LatLng(20, 20)).radius(1000000).fillColor(Color.GREEN));
+        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
         mMap.setMyLocationEnabled(true);
         UiSettings settings = mMap.getUiSettings();
         settings.setMyLocationButtonEnabled(true);
         LocationProvider provider;
+        GoogleMap.OnMapClickListener list = new GoogleMap.OnMapClickListener() {
+            public void onMapClick(LatLng latLng) {
+                Context context = getApplicationContext();
+                Geocoder loc = new Geocoder(context, Locale.getDefault());
+                if (loc.isPresent()) {
+                    try {
+                        addresses = loc.getFromLocation(latLng.latitude, latLng.longitude, 1);
+                        if (addresses.size() > 0) {
+                            text = "Postal code: " + addresses.get(0);
+                        } else {
+                            text = "You're somewhere in the ocean";
+                        }
+                        Toast toast = Toast.makeText(context, text, Toast.LENGTH_LONG);
+                        toast.show();
+                    } catch  (IllegalArgumentException e2) {
 
+
+                    } catch (IOException e1) {
+
+
+                    }
+
+                }
+
+            }
+        };
+        mMap.setOnMapClickListener(list);
 
     }
 }
