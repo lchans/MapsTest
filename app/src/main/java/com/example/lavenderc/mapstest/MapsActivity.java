@@ -1,6 +1,7 @@
 package com.example.lavenderc.mapstest;
 
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.GpsStatus;
@@ -20,10 +21,15 @@ import android.widget.Button;
 
 import com.google.android.gms.maps.UiSettings;
 
+import org.json.JSONObject;
+import org.json.JSONStringer;
+
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-
+import java.io.FileReader;
+import javax.json.*;
 
 public class MapsActivity extends FragmentActivity {
 
@@ -100,7 +106,28 @@ public class MapsActivity extends FragmentActivity {
             myButton.setText("Press to show!");
         }
 
+        AssetManager assetManager = getAssets();
+        try {
+
+            InputStream inputStream = getAssets().open("text.json");
+            int sizeOfJSONFile = inputStream.available();
+            byte[] bytes = new byte[sizeOfJSONFile];
+            inputStream.read(bytes);
+            String result = new String(bytes, "UTF-8");
+            JSONObject o = new JSONObject(result);
+            System.out.println(o);
+            inputStream.close();
+
+
+
+        } catch (Exception e) {
+            System.out.println("Nope");
+
+        }
+
+
     }
+
 
     private void changeMap() {
         mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
