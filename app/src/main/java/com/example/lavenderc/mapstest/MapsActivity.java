@@ -12,19 +12,16 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+
 import com.google.android.gms.maps.model.CircleOptions;
 
 import android.view.View;
-import android.widget.TextView;
-import com.google.android.gms.maps.UiSettings;
-import android.location.LocationProvider;
-import android.widget.Toast;
-import android.location.Geocoder;
 
-import java.io.IOException;
+import com.google.android.gms.maps.UiSettings;
+
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+
 
 
 public class MapsActivity extends FragmentActivity {
@@ -32,8 +29,9 @@ public class MapsActivity extends FragmentActivity {
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private List<Address> addresses = null;
     private CharSequence text;
-    private boolean isShapeSet;
+    private boolean isShapeSet = true;
     private Circle circle;
+    private ArrayList<Circle> circles = new ArrayList<Circle>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,15 +89,8 @@ public class MapsActivity extends FragmentActivity {
 
     public void buttonAction (View view) {
        isShapeSet = !isShapeSet;
-       if (isShapeSet) {
-           CircleOptions circleOptions = new CircleOptions()
-                   .center(new LatLng(37.4, -122.1))
-                   .radius(100000) // In meters
-                   .strokeWidth(1)
-                   .fillColor(Color.CYAN);
-           circle = mMap.addCircle(circleOptions);
-       } else {
-            circle.remove();
+       for (Circle c: circles) {
+            c.setVisible(isShapeSet);
        }
        System.out.println(isShapeSet);
     }
@@ -109,31 +100,15 @@ public class MapsActivity extends FragmentActivity {
         mMap.setMyLocationEnabled(true);
         UiSettings settings = mMap.getUiSettings();
         settings.setMyLocationButtonEnabled(true);
-        LocationProvider provider;
         GoogleMap.OnMapClickListener list = new GoogleMap.OnMapClickListener() {
             public void onMapClick(LatLng latLng) {
-                Context context = getApplicationContext();
-                Geocoder loc = new Geocoder(context, Locale.getDefault());
-                if (loc.isPresent()) {
-                    try {
-                        addresses = loc.getFromLocation(latLng.latitude, latLng.longitude, 1);
-                        if (addresses.size() > 0) {
-                            text = "Postal code: " + addresses.get(0);
-                        } else {
-                            text = "You're somewhere in the ocean";
-                        }
-                        Toast toast = Toast.makeText(context, text, Toast.LENGTH_LONG);
-                        toast.show();
-                    } catch  (IllegalArgumentException e2) {
-
-
-                    } catch (IOException e1) {
-
-
-                    }
-
-                }
-
+                CircleOptions circleOptions = new CircleOptions()
+                        .center(new LatLng(latLng.latitude, latLng.longitude))
+                        .radius(100000) // In meters
+                        .strokeWidth(1)
+                        .fillColor(Color.CYAN);
+                Circle circle = mMap.addCircle(circleOptions);
+                circles.add(circle);
             }
         };
         mMap.setOnMapClickListener(list);
