@@ -16,6 +16,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.CircleOptions;
 
 import android.view.View;
+import android.widget.Button;
 
 import com.google.android.gms.maps.UiSettings;
 
@@ -92,7 +93,13 @@ public class MapsActivity extends FragmentActivity {
        for (Circle c: circles) {
             c.setVisible(isShapeSet);
        }
-       System.out.println(isShapeSet);
+        Button myButton = (Button) findViewById(R.id.my_button);
+        if (isShapeSet) {
+            myButton.setText("Press to hide!");
+        } else {
+            myButton.setText("Press to show!");
+        }
+
     }
 
     private void changeMap() {
@@ -102,13 +109,15 @@ public class MapsActivity extends FragmentActivity {
         settings.setMyLocationButtonEnabled(true);
         GoogleMap.OnMapClickListener list = new GoogleMap.OnMapClickListener() {
             public void onMapClick(LatLng latLng) {
-                CircleOptions circleOptions = new CircleOptions()
-                        .center(new LatLng(latLng.latitude, latLng.longitude))
-                        .radius(100000) // In meters
-                        .strokeWidth(1)
-                        .fillColor(Color.CYAN);
-                Circle circle = mMap.addCircle(circleOptions);
-                circles.add(circle);
+                if (isShapeSet) {
+                    CircleOptions circleOptions = new CircleOptions()
+                            .center(new LatLng(latLng.latitude, latLng.longitude))
+                            .radius(100000) // In meters
+                            .strokeWidth(1)
+                            .fillColor(Color.CYAN);
+                    Circle circle = mMap.addCircle(circleOptions);
+                    circles.add(circle);
+                }
             }
         };
         mMap.setOnMapClickListener(list);

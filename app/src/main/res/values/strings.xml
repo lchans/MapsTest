@@ -3,6 +3,6 @@
 
     <string name="app_name">MapsTest</string>
     <string name="title_activity_maps">Map</string>
-    <string name="button_text">Press for shapes!</string>
+    <string name="button_text">Press to hide!</string>
 
 </resources>
