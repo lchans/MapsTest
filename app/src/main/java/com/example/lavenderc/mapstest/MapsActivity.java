@@ -1,33 +1,41 @@
 package com.example.lavenderc.mapstest;
 
 import android.graphics.Color;
-import android.location.Address;
+import android.support.annotation.XmlRes;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
 
 import android.view.View;
+
+import junit.framework.Test;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import java.io.File;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 
 public class MapsActivity extends FragmentActivity {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
-    private List<Address> addresses = null;
-    private CharSequence text;
     private boolean isJsonShown = false;
-    private Circle circle;
-    private ArrayList<Circle> circles = new ArrayList<Circle>();
-    private ArrayList<Object> layer = new ArrayList<Object>();
+    private ArrayList<Polygon> layer = new ArrayList<Polygon>();
     private Polygon p;
 
     @Override
@@ -48,45 +56,109 @@ public class MapsActivity extends FragmentActivity {
             mMap = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
                     .getMap();
             if (mMap != null) {
-                setJSONLayer();
+                //setJSONLayer();
             }
         }
     }
 
+    public void setKML () {
 
-    public void setJSONLayer() {
+        InputStream input;
+        int size;
+        byte[] bytes;
+
+        XmlPullParserFactory pullParserFactory;
         try {
-            InputStream inputStream = getAssets().open("text.json");
-            int sizeOfJSONFile = inputStream.available();
-            byte[] bytes = new byte[sizeOfJSONFile];
-            inputStream.read(bytes);
-            String result = new String(bytes, "UTF-8");
-            JSONObject text = new JSONObject(result);
-            String fillColour = text.getJSONObject("properties").get("color").toString();
-            System.out.println(fillColour);
-            JSONArray a = text.getJSONObject("geometry").getJSONArray("coordinates").getJSONArray(0);
-            PolygonOptions poly = new PolygonOptions();
+            pullParserFactory = XmlPullParserFactory.newInstance();
+            XmlPullParser parser = pullParserFactory.newPullParser();
+            InputStream stream = getApplicationContext().getAssets().open("location.kml");
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser.setInput(stream, null);
 
-            for (int i = 0; i < a.length(); i++) {
-                String lat = null;
-                String lon = null;
-                lat = a.getJSONArray(i).get(0).toString().trim();
-                lon = a.getJSONArray(i).get(1).toString().trim();
-                poly.add(new LatLng(Double.parseDouble(lon), Double.parseDouble(lat)));
+            int eventType = parser.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                switch (eventType) {
+                    case XmlPullParser.START_TAG:
+                        String name = parser.getName();
+                        if (name.equals("coordinates")) {
+
+                            String[] point = parser.nextText().split(",");
+                            for (String s: point) {
+
+                                    System.out.println(s);
+                               
+                            }
+
+                        }
+
+                }
+                eventType = parser.next();
             }
-            poly.fillColor(Color.parseColor(fillColour));
-            p = mMap.addPolygon(poly);
-            inputStream.close();
+
         } catch (Exception e) {
             System.out.println("Nope");
         }
+
+
     }
+
+
+    public void setJSONLayer () {
+        JSONArray coordinates;
+        JSONArray points;
+        JSONArray features;
+        JSONObject geometry;
+        InputStream input;
+        int size;
+        byte[] bytes;
+
+        try {
+            input = getAssets().open("google.json");
+            size = input.available();
+            bytes = new byte[size];
+            input.read(bytes);
+            JSONObject text = new JSONObject(new String(bytes, "UTF-8"));
+
+            features = text.getJSONArray("features");
+
+            for (int i = 0; i < features.length(); i++) {
+
+                geometry = features.getJSONObject(i).getJSONObject("geometry");
+                String fillColour = features.getJSONObject(i).getJSONObject("properties").get("color").toString();
+                coordinates = geometry.getJSONArray("coordinates");
+
+                for (int k = 0; k < coordinates.length(); k++) {
+                    PolygonOptions poly = new PolygonOptions();
+                    points = coordinates.getJSONArray(k);
+                    for (int j = 0; j < points.length(); j++) {
+                        String lat = points.getJSONArray(j).get(0).toString();
+                        String lon =  points.getJSONArray(j).get(1).toString();
+                        poly.add(new LatLng(Double.parseDouble(lon), Double.parseDouble(lat)));
+                    }
+                    poly.fillColor(Color.parseColor(fillColour));
+                    p = mMap.addPolygon(poly);
+                    layer.add(p);
+                }
+            }
+
+        } catch (Exception e)  {
+
+
+        }
+
+
+    }
+
+
+
 
 
 
     public void buttonAction (View view) {
+        setKML();
         isJsonShown = !isJsonShown;
-        p.setVisible(isJsonShown);
-        System.out.println(isJsonShown);
+        for (Polygon poly: layer) {
+            poly.setVisible(isJsonShown);
+        }
     }
 }
