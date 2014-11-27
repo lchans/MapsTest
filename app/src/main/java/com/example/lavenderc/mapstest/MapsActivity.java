@@ -17,6 +17,8 @@ import junit.framework.Test;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
@@ -69,30 +71,19 @@ public class MapsActivity extends FragmentActivity {
 
         XmlPullParserFactory pullParserFactory;
         try {
-            pullParserFactory = XmlPullParserFactory.newInstance();
-            XmlPullParser parser = pullParserFactory.newPullParser();
-            InputStream stream = getApplicationContext().getAssets().open("location.kml");
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            parser.setInput(stream, null);
 
-            int eventType = parser.getEventType();
-            while (eventType != XmlPullParser.END_DOCUMENT) {
-                switch (eventType) {
-                    case XmlPullParser.START_TAG:
-                        String name = parser.getName();
-                        if (name.equals("coordinates")) {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(getAssets().open("location.kml"));
+            NodeList nodeList = document.getDocumentElement().getChildNodes();
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                    Node node = nodeList.item(i);
+                    if (node.getNodeType() == Node.ELEMENT_NODE) {
 
-                            String[] point = parser.nextText().split(",");
-                            for (String s: point) {
+                        System.out.println(node.getNodeName());
 
-                                    System.out.println(s);
-                               
-                            }
+                    }
 
-                        }
-
-                }
-                eventType = parser.next();
             }
 
         } catch (Exception e) {
