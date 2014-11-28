@@ -1,14 +1,18 @@
 package com.example.lavenderc.mapstest;
 
 import android.graphics.Color;
+import android.sax.Element;
 import android.support.annotation.XmlRes;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import android.view.View;
 
@@ -17,6 +21,7 @@ import junit.framework.Test;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xmlpull.v1.XmlPullParser;
@@ -27,6 +32,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -68,30 +74,57 @@ public class MapsActivity extends FragmentActivity {
         InputStream input;
         int size;
         byte[] bytes;
+        PolylineOptions line = new PolylineOptions();
+        HashMap<String, String> hash = new HashMap<String, String>();
+        String colour = "";
+        String hex = "";
+        String currentColour = "#blueLine";
 
         XmlPullParserFactory pullParserFactory;
         try {
+            pullParserFactory = XmlPullParserFactory.newInstance();
+            XmlPullParser parser = pullParserFactory.newPullParser();
+            InputStream stream = getApplicationContext().getAssets().open("cta.kml");
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser.setInput(stream, null);
+            int eventType = parser.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if (eventType == XmlPullParser.START_TAG) {
+                    String name = parser.getName();
+                    if (name.equals("coordinates")) {
+                        String[] l = parser.nextText().split("\n");
+                        for (String s: l) {
+                            String[] p = s.split(",");
+                            if (p.length > 2) {
+                                line.add(new LatLng(Double.parseDouble(p[1]), Double.parseDouble(p[0])))
+                                        .width(20)
+                                        .color(Color.parseColor("#" + hash.get(currentColour)));
 
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(getAssets().open("location.kml"));
-            NodeList nodeList = document.getDocumentElement().getChildNodes();
-            for (int i = 0; i < nodeList.getLength(); i++) {
-                    Node node = nodeList.item(i);
-                    if (node.getNodeType() == Node.ELEMENT_NODE) {
-
-                        System.out.println(node.getNodeName());
+                            }
+                        }
+                    } else if (name.equals("Style")) {
+                        colour = parser.getAttributeValue(null, "id");
+                    } else if (name.equals ("color")) {
+                        hex = parser.nextText();
+                        hash.put("#"+colour, hex);
+                    } else if (name.equals("styleUrl")) {
+                        currentColour = parser.nextText();
 
                     }
-
+                }
+                eventType = parser.next();
+                mMap.addPolyline(line);
+                line = new PolylineOptions();
             }
+
 
         } catch (Exception e) {
             System.out.println("Nope");
         }
-
-
     }
+
+
+
 
 
     public void setJSONLayer () {
