@@ -1,43 +1,25 @@
 package com.example.lavenderc.mapstest;
 
 import android.graphics.Color;
-import android.sax.Element;
-import android.support.annotation.XmlRes;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import android.view.View;
 
-import junit.framework.Test;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import java.io.File;
 import java.io.InputStream;
-import java.io.StringReader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 
 public class MapsActivity extends FragmentActivity {
 
@@ -71,60 +53,60 @@ public class MapsActivity extends FragmentActivity {
 
     public void setKML () {
 
-        InputStream input;
-        int size;
-        byte[] bytes;
-        PolylineOptions line = new PolylineOptions();
-        HashMap<String, String> hash = new HashMap<String, String>();
-        String colour = "";
-        String hex = "";
-        String currentColour = "#blueLine";
+        PolylineOptions options = new PolylineOptions();
+        HashMap<String, String> colourPalette = new HashMap<String, String>();
+        HashMap<String, Integer> lineWidths = new HashMap<String, Integer>();
+        Integer lon = 0, lat = 1;
+        Double lonDouble, latDouble;
+        LatLng latLng;
 
-        XmlPullParserFactory pullParserFactory;
+        String name = new String();
+        String colourID = new String();
+        String currentColour = new String();
+
+        String[] lines;
+
         try {
-            pullParserFactory = XmlPullParserFactory.newInstance();
-            XmlPullParser parser = pullParserFactory.newPullParser();
+            XmlPullParser parser = XmlPullParserFactory.newInstance().newPullParser();
             InputStream stream = getApplicationContext().getAssets().open("cta.kml");
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(stream, null);
             int eventType = parser.getEventType();
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 if (eventType == XmlPullParser.START_TAG) {
-                    String name = parser.getName();
+                    name = parser.getName();
                     if (name.equals("coordinates")) {
-                        String[] l = parser.nextText().split("\n");
-                        for (String s: l) {
-                            String[] p = s.split(",");
-                            if (p.length > 2) {
-                                line.add(new LatLng(Double.parseDouble(p[1]), Double.parseDouble(p[0])))
-                                        .width(20)
-                                        .color(Color.parseColor("#" + hash.get(currentColour)));
-
+                        lines = parser.nextText().split("\n");
+                        for (String point: lines) {
+                            String[] coordinate = point.split(",");
+                            if (coordinate.length > 2) {
+                                latDouble = Double.parseDouble(coordinate[lat]);
+                                lonDouble = Double.parseDouble(coordinate[lon]);
+                                latLng = new LatLng(latDouble,lonDouble);
+                                options.add(latLng)
+                                       .width(lineWidths.get("#"+colourID))
+                                       .color(Color.parseColor("#" + colourPalette.get(currentColour)));
                             }
                         }
                     } else if (name.equals("Style")) {
-                        colour = parser.getAttributeValue(null, "id");
+                        colourID = parser.getAttributeValue(null, "id");
                     } else if (name.equals ("color")) {
-                        hex = parser.nextText();
-                        hash.put("#"+colour, hex);
-                    } else if (name.equals("styleUrl")) {
-                        currentColour = parser.nextText();
+                        colourPalette.put("#" + colourID, parser.nextText());
+                    } else if (name.equals("width")) {
+                        lineWidths.put("#" + colourID, Integer.parseInt(parser.nextText()));
 
+                    }else if (name.equals("styleUrl")) {
+                        currentColour = parser.nextText();
                     }
                 }
                 eventType = parser.next();
-                mMap.addPolyline(line);
-                line = new PolylineOptions();
+                mMap.addPolyline(options);
+                options = new PolylineOptions();
             }
-
-
         } catch (Exception e) {
             System.out.println("Nope");
         }
     }
-
-
-
 
 
     public void setJSONLayer () {
